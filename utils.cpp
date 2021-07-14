@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include <utility>
+
 class CurlGlobalStateGuard
 {
 public:
@@ -18,26 +20,26 @@ EasyHandle CreateEasyHandle()
     return curl;
 }
 
-int DownloaderImage::Init() {
+int ImageDownloader::Init() {
     /*
      * At this step, we set options for easy handles.
      * To add links to the files that need to be downloaded, we set the CURLOPT_URL option:
      */
-    curl_easy_setopt(m_handle.get(), CURLOPT_URL, "https://protei.ru/themes/custom/aga/favicon.ico");
+    curl_easy_setopt(m_handle.get(), CURLOPT_URL, m_URL.c_str());
 
     /*
      * Next, we need to deal with SSL connections.
      * To simplify our tutorial, we can tell libcurl not to verify SSL connections by setting the CURLOPT_SSL_VERIFYPEER
      * and CURLOPT_SSL_VERIFYHOST options to 0:
      */
-    m_set_ssl(m_handle.get());
+    m_set_ssl();
 
     /*
      * By default, curl will print downloaded data to the console, which is useful for testing purposes.
      * To change this behavior, we can redefine the CURLOPT_WRITEFUNCTION option and change it to write to a file:
      */
 
-    m_save_to_file(m_handle.get());
+    m_save_to_file();
 
     /* Perform the request, res will get the return code */
     auto res = curl_easy_perform(m_handle.get());
@@ -51,26 +53,32 @@ int DownloaderImage::Init() {
     return 0;
 }
 
-void DownloaderImage::m_save_to_file(CURL *curl) {
-    static std::ofstream file("../downloaded_image.ico", std::ios::binary);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, DownloaderImage::write_to_file);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void*>(&file));
+void ImageDownloader::m_save_to_file() {
+    //static std::ofstream file("../downloaded_image.ico", std::ios::binary);
+    m_file.open(m_file_path, std::ios::binary);
+    curl_easy_setopt(m_handle.get(), CURLOPT_WRITEFUNCTION, ImageDownloader::write_to_file);
+    curl_easy_setopt(m_handle.get(), CURLOPT_WRITEDATA, reinterpret_cast<void*>(&m_file));
 }
 
-void DownloaderImage::m_set_ssl(CURL *curl) {
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+void ImageDownloader::m_set_ssl() {
+    curl_easy_setopt(m_handle.get(), CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(m_handle.get(), CURLOPT_SSL_VERIFYHOST, 0L);
 }
 
-DownloaderImage::DownloaderImage(): m_handle(CreateEasyHandle()) { //is it RAII?
+ImageDownloader::ImageDownloader(): m_handle(CreateEasyHandle()) { //is it RAII?
 
 }
 
-size_t DownloaderImage::write_to_file(void *contents, size_t size, size_t nmemb, void *userp) {
+size_t ImageDownloader::write_to_file(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
     auto file = reinterpret_cast<std::ofstream*>(userp);
     file->write(reinterpret_cast<const char*>(contents), realsize);
     return realsize;
+}
+
+void ImageDownloader::SetURL_FilePath(std::string set_URL, std::string set_FilePath) {
+    m_URL = std::move(set_URL);
+    m_file_path = std::move(set_FilePath);
 }
 
 

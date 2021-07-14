@@ -3,7 +3,8 @@
 int main() {
     std::cout << "Hello, World!" << std::endl;
     try {
-        DownloaderImage downloaderOne;
+        ImageDownloader downloaderOne;
+        downloaderOne.SetURL_FilePath("https://protei.ru/themes/custom/aga/favicon.ico", "../downloaded_image.ico");
         downloaderOne.Init();
     }
     catch (const std::exception& ex){

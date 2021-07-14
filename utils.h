@@ -13,18 +13,21 @@
 using EasyHandle = std::unique_ptr<CURL, decltype(&curl_easy_cleanup)>;
 EasyHandle CreateEasyHandle();
 
-class DownloaderImage{
+class ImageDownloader{
 
 public:
     int Init();
-    DownloaderImage();
+    void SetURL_FilePath(std::string set_URL, std::string set_FilePath);
+    ImageDownloader();
     static size_t write_to_file(void* contents, size_t size, size_t nmemb, void* userp);
 
 private:
     EasyHandle m_handle;
-
-    void m_set_ssl(CURL* curl);
-    void m_save_to_file(CURL* curl);
+    std::ofstream m_file;
+    std::string m_URL;
+    std::string m_file_path;
+    void m_set_ssl();
+    void m_save_to_file();
 };
 
 #endif //CURL_EXAMPLE_UTILS_H
